@@ -6,13 +6,6 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "data.json")
 with open(DATA_PATH) as f:
     DATA = json.load(f)
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "*",
-    "Content-Type": "application/json",
-}
-
 def compute(regions, threshold_ms):
     result = {}
     for region in regions:
@@ -38,10 +31,15 @@ def compute(regions, threshold_ms):
     return result
 
 class handler(BaseHTTPRequestHandler):
+    def send_cors(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
+        self.send_header("Access-Control-Max-Age", "86400")
+
     def do_OPTIONS(self):
         self.send_response(200)
-        for k, v in CORS_HEADERS.items():
-            self.send_header(k, v)
+        self.send_cors()
         self.end_headers()
 
     def do_POST(self):
@@ -52,8 +50,8 @@ class handler(BaseHTTPRequestHandler):
         result = compute(regions, threshold_ms)
         response = json.dumps(result).encode()
         self.send_response(200)
-        for k, v in CORS_HEADERS.items():
-            self.send_header(k, v)
+        self.send_cors()
+        self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", len(response))
         self.end_headers()
         self.wfile.write(response)
